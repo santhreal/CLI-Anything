@@ -22,7 +22,7 @@ from cli_anything.shotcut.core import compositing as comp_mod
 from cli_anything.shotcut.core import preview as preview_mod
 from cli_anything.shotcut.utils.time import (
     timecode_to_frames, frames_to_timecode, parse_time_input,
-    frames_to_seconds, seconds_to_frames,
+    frames_to_seconds, seconds_to_frames, fps_float,
 )
 from cli_anything.shotcut.utils.mlt_xml import (
     create_blank_project, mlt_to_string, parse_mlt, write_mlt,
@@ -78,6 +78,24 @@ class TestTimecode:
     def test_seconds_to_frames(self):
         frames = seconds_to_frames(1.0, 30000, 1001)
         assert 29 <= frames <= 30
+
+    def test_nonpositive_fps_den_raises(self):
+        # fps_den=0 used to ZeroDivisionError on some paths and silently
+        # collapse frames_to_timecode to 00:00:00.000 on others.
+        with pytest.raises(ValueError, match="fps_num and fps_den must be positive"):
+            timecode_to_frames("00:00:01.000", 30000, 0)
+        with pytest.raises(ValueError, match="fps_num and fps_den must be positive"):
+            frames_to_timecode(100, 30000, 0)
+        with pytest.raises(ValueError, match="fps_num and fps_den must be positive"):
+            frames_to_seconds(100, 30000, 0)
+        with pytest.raises(ValueError, match="fps_num and fps_den must be positive"):
+            seconds_to_frames(1.0, 30000, 0)
+
+    def test_nonpositive_fps_num_raises(self):
+        with pytest.raises(ValueError, match="fps_num and fps_den must be positive"):
+            frames_to_timecode(100, 0, 1001)
+        with pytest.raises(ValueError, match="fps_num and fps_den must be positive"):
+            fps_float(0, 1001)
 
 
 # ============================================================================

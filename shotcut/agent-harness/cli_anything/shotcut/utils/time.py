@@ -1,15 +1,23 @@
 """Timecode utilities for MLT frame/time conversions."""
 
 import re
-from typing import Union
 
 # Default profile settings
 DEFAULT_FPS_NUM = 30000
 DEFAULT_FPS_DEN = 1001  # 29.97 fps
 
 
+def _require_positive_fps(fps_num: int, fps_den: int) -> None:
+    """Reject non-positive FPS factors that divide-by-zero or zero all durations."""
+    if fps_num <= 0 or fps_den <= 0:
+        raise ValueError(
+            f"fps_num and fps_den must be positive, got fps_num={fps_num!r}, fps_den={fps_den!r}"
+        )
+
+
 def fps_float(fps_num: int = DEFAULT_FPS_NUM, fps_den: int = DEFAULT_FPS_DEN) -> float:
     """Get floating-point FPS from numerator/denominator."""
+    _require_positive_fps(fps_num, fps_den)
     return fps_num / fps_den
 
 
@@ -23,6 +31,7 @@ def timecode_to_frames(tc: str, fps_num: int = DEFAULT_FPS_NUM,
         - "SS.mmm" (e.g., "90.5")
         - Plain integer (frame number as string)
     """
+    _require_positive_fps(fps_num, fps_den)
     tc = tc.strip()
 
     # Plain frame number
@@ -64,6 +73,7 @@ def timecode_to_frames(tc: str, fps_num: int = DEFAULT_FPS_NUM,
 def frames_to_timecode(frames: int, fps_num: int = DEFAULT_FPS_NUM,
                        fps_den: int = DEFAULT_FPS_DEN) -> str:
     """Convert frame number to HH:MM:SS.mmm timecode string."""
+    _require_positive_fps(fps_num, fps_den)
     if frames < 0:
         frames = 0
     # Use integer arithmetic to avoid floating-point drift:
@@ -81,12 +91,14 @@ def frames_to_timecode(frames: int, fps_num: int = DEFAULT_FPS_NUM,
 def frames_to_seconds(frames: int, fps_num: int = DEFAULT_FPS_NUM,
                       fps_den: int = DEFAULT_FPS_DEN) -> float:
     """Convert frame count to seconds."""
+    _require_positive_fps(fps_num, fps_den)
     return frames * fps_den / fps_num
 
 
 def seconds_to_frames(seconds: float, fps_num: int = DEFAULT_FPS_NUM,
                       fps_den: int = DEFAULT_FPS_DEN) -> int:
     """Convert seconds to frame count."""
+    _require_positive_fps(fps_num, fps_den)
     return int(seconds * fps_num / fps_den)
 
 
